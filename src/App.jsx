@@ -41,7 +41,7 @@ function Badge({ priority }) {
   const s = map[priority];
   return (
     <span style={{ background: s.bg, color: s.color, fontSize: 10, fontWeight: 700,
-      letterSpacing: 1.5, padding: "2px 8px", borderRadius: 4, fontFamily: "monospace" }}>
+      letterSpacing: 1.5, padding: "2px 8px", borderRadius: 4, fontFamily: "monospace", whiteSpace: "nowrap" }}>
       {s.label}
     </span>
   );
@@ -61,27 +61,29 @@ function StatusDot({ status }) {
 function MiniSparkline({ scores, labels }) {
   const max = Math.max(...scores);
   const min = Math.min(...scores) - 4;
-  const w = 200, h = 60;
+  const w = 260, h = 60;
   const pts = scores.map((s, i) => {
     const x = (i / (scores.length - 1)) * w;
     const y = h - ((s - min) / (max - min)) * h;
     return `${x},${y}`;
   }).join(" ");
   return (
-    <svg width={w} height={h} style={{ overflow: "visible" }}>
-      <polyline points={pts} fill="none" stroke={SHIELD_GREEN} strokeWidth={2} strokeLinejoin="round" />
-      {scores.map((s, i) => {
-        const x = (i / (scores.length - 1)) * w;
-        const y = h - ((s - min) / (max - min)) * h;
-        return (
-          <g key={i}>
-            <circle cx={x} cy={y} r={4} fill={SHIELD_GREEN} />
-            <text x={x} y={h + 16} textAnchor="middle" fontSize={10} fill="#6B7280">{labels[i]}</text>
-            <text x={x} y={y - 8} textAnchor="middle" fontSize={10} fill={SHIELD_GREEN}>{s}</text>
-          </g>
-        );
-      })}
-    </svg>
+    <div style={{ width: "100%", overflowX: "auto" }}>
+      <svg width={w} height={h + 30} style={{ overflow: "visible", display: "block" }}>
+        <polyline points={pts} fill="none" stroke={SHIELD_GREEN} strokeWidth={2} strokeLinejoin="round" />
+        {scores.map((s, i) => {
+          const x = (i / (scores.length - 1)) * w;
+          const y = h - ((s - min) / (max - min)) * h;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r={4} fill={SHIELD_GREEN} />
+              <text x={x} y={h + 16} textAnchor="middle" fontSize={10} fill="#6B7280">{labels[i]}</text>
+              <text x={x} y={y - 8} textAnchor="middle" fontSize={10} fill={SHIELD_GREEN}>{s}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 
@@ -98,10 +100,7 @@ function generateEmailResult(email) {
   const breaches = breachPool.slice(0, breachCount).map(b => ({ ...b, email }));
   const score = Math.max(45, 100 - breachCount * 18);
   return {
-    type: "email",
-    email,
-    overallScore: score,
-    breaches,
+    type: "email", email, overallScore: score, breaches,
     scoreHistory: [score - 8, score - 5, score - 7, score - 3, score - 5, score],
     scoreLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     recommendations: [
@@ -120,15 +119,10 @@ function generateDomainResult(domain) {
   const issues = (hasDmarc ? 0 : 1) + (hasDkim ? 0 : 1) + 1;
   const score = Math.max(40, 100 - issues * 14);
   return {
-    type: "domain",
-    domain,
-    overallScore: score,
+    type: "domain", domain, overallScore: score,
     domain_checks: {
-      spf: { status: "pass" },
-      dkim: { status: hasDkim ? "pass" : "fail" },
-      dmarc: { status: hasDmarc ? "pass" : "fail" },
-      ssl: { status: "pass" },
-      dnssec: { status: "warning" },
+      spf: { status: "pass" }, dkim: { status: hasDkim ? "pass" : "fail" },
+      dmarc: { status: hasDmarc ? "pass" : "fail" }, ssl: { status: "pass" }, dnssec: { status: "warning" },
     },
     scoreHistory: [score - 10, score - 7, score - 9, score - 4, score - 6, score],
     scoreLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -146,11 +140,8 @@ function generateBothResult(email, domain) {
   const domainResult = generateDomainResult(domain);
   const score = Math.round((emailResult.overallScore + domainResult.overallScore) / 2);
   return {
-    type: "both",
-    email, domain,
-    overallScore: score,
-    breaches: emailResult.breaches,
-    domain_checks: domainResult.domain_checks,
+    type: "both", email, domain, overallScore: score,
+    breaches: emailResult.breaches, domain_checks: domainResult.domain_checks,
     scoreHistory: [score - 10, score - 7, score - 9, score - 4, score - 6, score],
     scoreLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     recommendations: [...emailResult.recommendations, ...domainResult.recommendations]
@@ -159,7 +150,7 @@ function generateBothResult(email, domain) {
 }
 
 export default function APAShield() {
-  const [scanMode, setScanMode] = useState("email"); // "email" | "domain" | "both"
+  const [scanMode, setScanMode] = useState("email");
   const [activeTab, setActiveTab] = useState("overview");
   const [scanRunning, setScanRunning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -181,20 +172,15 @@ export default function APAShield() {
     if ((scanMode === "domain" || scanMode === "both") && !validateDomain(inputDomain)) {
       setError("Please enter a valid domain e.g. yourcompany.com"); return;
     }
-    setScanRunning(true);
-    setScanProgress(0);
-    setHasScanned(false);
+    setScanRunning(true); setScanProgress(0); setHasScanned(false);
     const iv = setInterval(() => {
       setScanProgress(p => {
         if (p >= 100) {
-          clearInterval(iv);
-          setScanRunning(false);
+          clearInterval(iv); setScanRunning(false);
           if (scanMode === "email") setScanData(generateEmailResult(inputEmail));
           else if (scanMode === "domain") setScanData(generateDomainResult(inputDomain));
           else setScanData(generateBothResult(inputEmail, inputDomain));
-          setHasScanned(true);
-          setActiveTab("overview");
-          return 100;
+          setHasScanned(true); setActiveTab("overview"); return 100;
         }
         return p + 3;
       });
@@ -208,7 +194,7 @@ export default function APAShield() {
   const tabs = [
     { id: "overview", label: "Overview" },
     ...(d && (d.type === "email" || d.type === "both") ? [{ id: "breaches", label: `Breaches (${d.breaches?.length ?? 0})` }] : []),
-    ...(d && (d.type === "domain" || d.type === "both") ? [{ id: "domain", label: "Domain Security" }] : []),
+    ...(d && (d.type === "domain" || d.type === "both") ? [{ id: "domain", label: "Domain" }] : []),
     { id: "actions", label: "Actions" },
   ];
 
@@ -223,47 +209,45 @@ export default function APAShield() {
       style={{
         flex: 1, background: scanMode === mode ? `${SHIELD_GREEN}15` : SHIELD_NAVY,
         border: `2px solid ${scanMode === mode ? SHIELD_GREEN : SHIELD_BORDER}`,
-        borderRadius: 10, padding: "14px 16px", cursor: "pointer",
-        textAlign: "left", transition: "all 0.2s",
+        borderRadius: 10, padding: "12px 10px", cursor: "pointer",
+        textAlign: "left", transition: "all 0.2s", minWidth: 0,
       }}>
-      <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: scanMode === mode ? SHIELD_GREEN : "#E5E7EB", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 11, color: "#6B7280" }}>{desc}</div>
+      <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: scanMode === mode ? SHIELD_GREEN : "#E5E7EB", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 10, color: "#6B7280", lineHeight: 1.3 }}>{desc}</div>
     </button>
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: SHIELD_DARK, color: "#E5E7EB", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+    <div style={{
+      minHeight: "100vh", background: SHIELD_DARK, color: "#E5E7EB",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      overflowX: "hidden", width: "100%", boxSizing: "border-box",
+    }}>
 
       {/* Top Bar */}
-      <div style={{ background: SHIELD_NAVY, borderBottom: `1px solid ${SHIELD_BORDER}`,
-        padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* APA Logo */}
-          <img
-            src="/apa-logo.jpeg"
-            alt="Automation Prime Africa"
-            style={{ height: 44, width: 44, objectFit: "contain", borderRadius: 8,
-              background: "#fff", padding: 3 }}
-          />
-          {/* Divider */}
-          <div style={{ width: 1, height: 32, background: SHIELD_BORDER }} />
-          {/* Shield name */}
+      <div style={{
+        background: SHIELD_NAVY, borderBottom: `1px solid ${SHIELD_BORDER}`,
+        padding: "0 12px", display: "flex", alignItems: "center",
+        justifyContent: "space-between", height: 60, boxSizing: "border-box", width: "100%",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/apa-logo.jpeg" alt="Automation Prime Africa"
+            style={{ height: 38, width: 38, objectFit: "contain", borderRadius: 8, background: "#fff", padding: 3 }} />
+          <div style={{ width: 1, height: 28, background: SHIELD_BORDER }} />
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 18 }}>⛨</span>
+            <span style={{ fontSize: 16 }}>⛨</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "#fff", lineHeight: 1.1 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#fff", lineHeight: 1.1 }}>
                 APA <span style={{ color: SHIELD_GREEN }}>Shield</span>
               </div>
-              <div style={{ fontSize: 10, color: "#6B7280", letterSpacing: 1, textTransform: "uppercase" }}>
-                Cybersecurity Health Platform
+              <div style={{ fontSize: 9, color: "#6B7280", letterSpacing: 1, textTransform: "uppercase" }}>
+                Cybersecurity Platform
               </div>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: "#4B5563" }}>
-          Automation Prime Africa
-        </div>
+        <div style={{ fontSize: 10, color: "#4B5563" }}>Automation Prime Africa</div>
       </div>
 
       {/* Scan progress bar */}
@@ -274,33 +258,26 @@ export default function APAShield() {
         </div>
       )}
 
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 16px" }}>
+      <div style={{ width: "100%", maxWidth: 960, margin: "0 auto", padding: "20px 12px", boxSizing: "border-box" }}>
 
         {/* Scan Form */}
         <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-          borderRadius: 12, padding: 28, marginBottom: 32 }}>
+          borderRadius: 12, padding: "20px 16px", marginBottom: 24 }}>
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
-              🔍 Security Scan
-            </div>
-            <div style={{ fontSize: 13, color: "#6B7280" }}>
-              Choose what you want to scan below.
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>🔍 Security Scan</div>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Choose what you want to scan below.</div>
           </div>
 
           {/* Mode Selector */}
-          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             {modeBtn("email", "📧", "Email Scan", "Check if an email was in a data breach")}
             {modeBtn("domain", "🌐", "Domain Scan", "Audit SPF, DKIM, DMARC & SSL records")}
             {modeBtn("both", "🔒", "Full Scan", "Email breach + full domain security check")}
           </div>
 
           {/* Input Fields */}
-          <div style={{ display: "grid",
-            gridTemplateColumns: scanMode === "both" ? "1fr 1fr auto" : "1fr auto",
-            gap: 12, alignItems: "end" }}>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(scanMode === "email" || scanMode === "both") && (
               <div>
                 <label style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase",
@@ -311,7 +288,6 @@ export default function APAShield() {
                   style={inputStyle} />
               </div>
             )}
-
             {(scanMode === "domain" || scanMode === "both") && (
               <div>
                 <label style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase",
@@ -322,13 +298,14 @@ export default function APAShield() {
                   style={inputStyle} />
               </div>
             )}
-
             <button onClick={runScan} disabled={scanRunning}
-              style={{ background: scanRunning ? SHIELD_BORDER : SHIELD_GREEN,
+              style={{
+                background: scanRunning ? SHIELD_BORDER : SHIELD_GREEN,
                 color: scanRunning ? "#6B7280" : "#000",
-                border: "none", borderRadius: 8, padding: "10px 24px",
+                border: "none", borderRadius: 8, padding: "12px 24px",
                 fontWeight: 700, fontSize: 14, cursor: scanRunning ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap", height: 42 }}>
+                width: "100%", boxSizing: "border-box",
+              }}>
               {scanRunning ? `Scanning… ${scanProgress}%` : "⟳ Run Scan"}
             </button>
           </div>
@@ -341,24 +318,23 @@ export default function APAShield() {
           )}
 
           {scanRunning && (
-            <div style={{ marginTop: 14, fontSize: 12, color: "#6B7280" }}>
-              {(scanMode === "email" || scanMode === "both") && <><span style={{ color: SHIELD_GREEN }}>●</span> Checking breach databases… </>}
-              {(scanMode === "domain" || scanMode === "both") && <><span style={{ color: SHIELD_GREEN }}>●</span> Scanning DNS records… </>}
-              <span style={{ color: SHIELD_GREEN }}>●</span> Calculating security score…
+            <div style={{ marginTop: 14, fontSize: 12, color: "#6B7280", lineHeight: 1.8 }}>
+              {(scanMode === "email" || scanMode === "both") && <div><span style={{ color: SHIELD_GREEN }}>●</span> Checking breach databases…</div>}
+              {(scanMode === "domain" || scanMode === "both") && <div><span style={{ color: SHIELD_GREEN }}>●</span> Scanning DNS records…</div>}
+              <div><span style={{ color: SHIELD_GREEN }}>●</span> Calculating security score…</div>
             </div>
           )}
         </div>
 
         {/* Landing */}
         {!hasScanned && !scanRunning && (
-          <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>⛨</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#6B7280", marginBottom: 8 }}>
+          <div style={{ textAlign: "center", padding: "48px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⛨</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#6B7280", marginBottom: 8 }}>
               Choose a scan type above to get started
             </div>
-            <div style={{ fontSize: 13, color: "#4B5563" }}>
-              Scan an email for breaches, check a domain's security records,<br />
-              or run a full scan for complete visibility.
+            <div style={{ fontSize: 13, color: "#4B5563", lineHeight: 1.6 }}>
+              Scan an email for breaches, check a domain's security records, or run a full scan for complete visibility.
             </div>
           </div>
         )}
@@ -366,67 +342,72 @@ export default function APAShield() {
         {/* Results */}
         {hasScanned && d && (
           <>
-            {/* Summary Cards */}
-            <div style={{ display: "grid",
-              gridTemplateColumns: d.type === "both" ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr",
-              gap: 12, marginBottom: 24 }}>
+            {/* Summary Cards — 2 columns on mobile */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 10, marginBottom: 20,
+            }}>
               <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                borderRadius: 10, padding: "16px 20px", borderTop: `3px solid ${scoreColor}` }}>
-                <div style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Security Score</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: scoreColor, fontFamily: "monospace" }}>{d.overallScore}/100</div>
+                borderRadius: 10, padding: "14px 16px", borderTop: `3px solid ${scoreColor}` }}>
+                <div style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Security Score</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: scoreColor, fontFamily: "monospace" }}>{d.overallScore}/100</div>
                 <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{scoreLabel}</div>
               </div>
 
               {(d.type === "email" || d.type === "both") && (
                 <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                  borderRadius: 10, padding: "16px 20px",
+                  borderRadius: 10, padding: "14px 16px",
                   borderTop: `3px solid ${d.breaches.length > 0 ? SHIELD_RED : SHIELD_GREEN}` }}>
-                  <div style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Breaches Found</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: d.breaches.length > 0 ? SHIELD_RED : SHIELD_GREEN, fontFamily: "monospace" }}>
+                  <div style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Breaches Found</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: d.breaches.length > 0 ? SHIELD_RED : SHIELD_GREEN, fontFamily: "monospace" }}>
                     {d.breaches.length}
                   </div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2, wordBreak: "break-all" }}>{d.email}</div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, wordBreak: "break-all" }}>{d.email}</div>
                 </div>
               )}
 
               {(d.type === "domain" || d.type === "both") && (
                 <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                  borderRadius: 10, padding: "16px 20px", borderTop: `3px solid ${SHIELD_BLUE}` }}>
-                  <div style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Domain Checks</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: SHIELD_BLUE, fontFamily: "monospace" }}>
+                  borderRadius: 10, padding: "14px 16px", borderTop: `3px solid ${SHIELD_BLUE}` }}>
+                  <div style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Domain Checks</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: SHIELD_BLUE, fontFamily: "monospace" }}>
                     {Object.values(d.domain_checks).filter(v => v.status === "pass").length}/5
                   </div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2, wordBreak: "break-all" }}>{d.domain}</div>
+                  <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2, wordBreak: "break-all" }}>{d.domain}</div>
                 </div>
               )}
 
               <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                borderRadius: 10, padding: "16px 20px", borderTop: `3px solid ${SHIELD_AMBER}` }}>
-                <div style={{ fontSize: 11, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Actions Needed</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: SHIELD_AMBER, fontFamily: "monospace" }}>
+                borderRadius: 10, padding: "14px 16px", borderTop: `3px solid ${SHIELD_AMBER}` }}>
+                <div style={{ fontSize: 10, color: "#6B7280", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Actions Needed</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: SHIELD_AMBER, fontFamily: "monospace" }}>
                   {d.recommendations.filter(r => r.priority === "critical" || r.priority === "high").length}
                 </div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>critical or high priority</div>
+                <div style={{ fontSize: 10, color: "#9CA3AF", marginTop: 2 }}>critical or high priority</div>
               </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${SHIELD_BORDER}`, marginBottom: 20 }}>
+            {/* Tabs — scrollable row */}
+            <div style={{
+              display: "flex", gap: 2, borderBottom: `1px solid ${SHIELD_BORDER}`,
+              marginBottom: 20, overflowX: "auto", WebkitOverflowScrolling: "touch",
+            }}>
               {tabs.map(t => (
                 <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
                   background: "none", border: "none", cursor: "pointer",
-                  padding: "8px 16px", fontSize: 13, fontWeight: 600,
+                  padding: "8px 14px", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
                   color: activeTab === t.id ? SHIELD_GREEN : "#6B7280",
                   borderBottom: activeTab === t.id ? `2px solid ${SHIELD_GREEN}` : "2px solid transparent",
-                  transition: "all 0.15s"
+                  transition: "all 0.15s", flexShrink: 0,
                 }}>{t.label}</button>
               ))}
             </div>
 
-            {/* Tab: Overview */}
+            {/* Tab: Overview — single column on mobile */}
             {activeTab === "overview" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#9CA3AF", marginBottom: 16 }}>Overall Security Score</div>
                   <ScoreRing score={d.overallScore} />
                   <div style={{ textAlign: "center", marginTop: 12 }}>
@@ -439,15 +420,13 @@ export default function APAShield() {
                   </div>
                 </div>
 
-                <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 24 }}>
+                <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 20 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "#9CA3AF", marginBottom: 16 }}>Score Trend</div>
-                  <div style={{ overflowX: "auto", paddingBottom: 20 }}>
-                    <MiniSparkline scores={d.scoreHistory} labels={d.scoreLabels} />
-                  </div>
+                  <MiniSparkline scores={d.scoreHistory} labels={d.scoreLabels} />
                 </div>
 
                 {(d.type === "email" || d.type === "both") && (
-                  <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 24 }}>
+                  <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#9CA3AF", marginBottom: 12 }}>Breach Summary</div>
                     {d.breaches.length === 0 ? (
                       <div style={{ background: "#0A2318", borderRadius: 8, padding: 20, textAlign: "center" }}>
@@ -458,7 +437,7 @@ export default function APAShield() {
                     ) : (
                       d.breaches.map((b, i) => (
                         <div key={i} style={{ padding: "10px 0", borderBottom: `1px solid ${SHIELD_BORDER}`,
-                          display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 600 }}>{b.breach}</div>
                             <div style={{ fontSize: 11, color: "#6B7280" }}>{b.date}</div>
@@ -471,7 +450,7 @@ export default function APAShield() {
                 )}
 
                 {(d.type === "domain" || d.type === "both") && (
-                  <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 24 }}>
+                  <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 20 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#9CA3AF", marginBottom: 16 }}>Domain Security Status</div>
                     {Object.entries(d.domain_checks).map(([key, val]) => (
                       <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -488,17 +467,17 @@ export default function APAShield() {
             {/* Tab: Breaches */}
             {activeTab === "breaches" && (d.type === "email" || d.type === "both") && (
               <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, overflow: "hidden" }}>
-                <div style={{ padding: "16px 20px", borderBottom: `1px solid ${SHIELD_BORDER}`,
-                  display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ padding: "14px 16px", borderBottom: `1px solid ${SHIELD_BORDER}`,
+                  display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>Credential Breach Report</div>
-                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2, wordBreak: "break-all" }}>
                       Results for: <span style={{ color: SHIELD_GREEN, fontFamily: "monospace" }}>{d.email}</span>
                     </div>
                   </div>
                   <span style={{ background: d.breaches.length > 0 ? "#3B0A0A" : "#0A2318",
                     color: d.breaches.length > 0 ? SHIELD_RED : SHIELD_GREEN,
-                    fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>
+                    fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
                     {d.breaches.length > 0 ? `${d.breaches.length} FOUND` : "CLEAN ✅"}
                   </span>
                 </div>
@@ -512,12 +491,12 @@ export default function APAShield() {
                   </div>
                 ) : (
                   d.breaches.map((b, i) => (
-                    <div key={i} style={{ padding: "16px 20px", borderBottom: `1px solid ${SHIELD_BORDER}`,
+                    <div key={i} style={{ padding: "14px 16px", borderBottom: `1px solid ${SHIELD_BORDER}`,
                       cursor: "pointer", background: showBreach === i ? `${SHIELD_RED}08` : "transparent" }}
                       onClick={() => setShowBreach(showBreach === i ? null : i)}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "monospace" }}>{b.email}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "monospace", wordBreak: "break-all" }}>{b.email}</div>
                           <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
                             Found in: <span style={{ color: "#9CA3AF" }}>{b.breach}</span> · {b.date}
                           </div>
@@ -539,12 +518,12 @@ export default function APAShield() {
 
             {/* Tab: Domain */}
             {activeTab === "domain" && (d.type === "domain" || d.type === "both") && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                  borderRadius: 10, padding: 20, display: "flex", alignItems: "center", gap: 12 }}>
+                  borderRadius: 10, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{ fontSize: 20 }}>🌐</span>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>Domain: <span style={{ color: SHIELD_GREEN, fontFamily: "monospace" }}>{d.domain}</span></div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Domain: <span style={{ color: SHIELD_GREEN, fontFamily: "monospace", wordBreak: "break-all" }}>{d.domain}</span></div>
                     <div style={{ fontSize: 12, color: "#6B7280" }}>Security controls audit</div>
                   </div>
                 </div>
@@ -559,12 +538,12 @@ export default function APAShield() {
                   return (
                     <div key={item.key} style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
                       borderLeft: `3px solid ${check.status === "pass" ? SHIELD_GREEN : check.status === "warning" ? SHIELD_AMBER : SHIELD_RED}`,
-                      borderRadius: 10, padding: "16px 20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                      borderRadius: 10, padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 14, fontWeight: 700 }}>{item.name}</span>
                         <StatusDot status={check.status} />
                       </div>
-                      <div style={{ fontSize: 12, color: "#6B7280" }}>{item.desc}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{item.desc}</div>
                     </div>
                   );
                 })}
@@ -579,14 +558,14 @@ export default function APAShield() {
                 </div>
                 {d.recommendations.map((rec, i) => (
                   <div key={i} style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`,
-                    borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "flex-start", gap: 14 }}>
-                    <span style={{ fontSize: 22, marginTop: 2 }}>{rec.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>{rec.title}</span>
+                    borderRadius: 10, padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                    <span style={{ fontSize: 20, marginTop: 2, flexShrink: 0 }}>{rec.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{rec.title}</span>
                         <Badge priority={rec.priority} />
                       </div>
-                      <div style={{ fontSize: 12, color: "#6B7280" }}>{rec.detail}</div>
+                      <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{rec.detail}</div>
                     </div>
                   </div>
                 ))}
@@ -597,7 +576,7 @@ export default function APAShield() {
 
         {/* Footer */}
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: `1px solid ${SHIELD_BORDER}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          display: "flex", flexDirection: "column", gap: 4, alignItems: "center", textAlign: "center" }}>
           <div style={{ fontSize: 11, color: "#4B5563" }}>APA Shield · Automation Prime Africa · Cybersecurity Health Platform</div>
           <div style={{ fontSize: 11, color: "#4B5563" }}>Phase 1 · Demo Mode · Real API integration coming in Phase 2</div>
         </div>
