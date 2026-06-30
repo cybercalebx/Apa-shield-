@@ -228,26 +228,39 @@ export default function APAShield() {
       {/* Top Bar */}
       <div style={{
         background: SHIELD_NAVY, borderBottom: `1px solid ${SHIELD_BORDER}`,
-        padding: "0 12px", display: "flex", alignItems: "center",
-        justifyContent: "space-between", height: 60, boxSizing: "border-box", width: "100%",
+        padding: "0 16px", display: "flex", alignItems: "center",
+        justifyContent: "space-between", height: 70, boxSizing: "border-box", width: "100%",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/apa-logo.jpeg" alt="Automation Prime Africa"
-            style={{ height: 38, width: 38, objectFit: "contain", borderRadius: 8, background: "#fff", padding: 3 }} />
-          <div style={{ width: 1, height: 28, background: SHIELD_BORDER }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 16 }}>⛨</span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#fff", lineHeight: 1.1 }}>
-                APA <span style={{ color: SHIELD_GREEN }}>Shield</span>
-              </div>
-              <div style={{ fontSize: 9, color: "#6B7280", letterSpacing: 1, textTransform: "uppercase" }}>
-                Cybersecurity Platform
-              </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* APA Logo — larger and more prominent */}
+          <img
+            src="data:image/jpeg;base64,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"
+            alt="Automation Prime Africa"
+            style={{
+              height: 54,
+              width: 54,
+              objectFit: "contain",
+              borderRadius: 10,
+              background: "#ffffff",
+              padding: 4,
+              boxShadow: `0 0 0 1px ${SHIELD_BORDER}`,
+            }}
+          />
+          <div style={{ width: 1, height: 36, background: SHIELD_BORDER }} />
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 17, color: "#fff", lineHeight: 1.15, letterSpacing: 0.2 }}>
+              APA <span style={{ color: SHIELD_GREEN }}>Shield</span>
+            </div>
+            <div style={{ fontSize: 10, color: "#6B7280", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 1 }}>
+              Automation Prime Africa
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 10, color: "#4B5563" }}>Automation Prime Africa</div>
+        <div style={{
+          fontSize: 10, color: "#4B5563", textAlign: "right", lineHeight: 1.4,
+        }}>
+          Cybersecurity<br />Platform
+        </div>
       </div>
 
       {/* Scan progress bar */}
@@ -342,7 +355,7 @@ export default function APAShield() {
         {/* Results */}
         {hasScanned && d && (
           <>
-            {/* Summary Cards — 2 columns on mobile */}
+            {/* Summary Cards */}
             <div style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, 1fr)",
@@ -388,7 +401,7 @@ export default function APAShield() {
               </div>
             </div>
 
-            {/* Tabs — scrollable row */}
+            {/* Tabs */}
             <div style={{
               display: "flex", gap: 2, borderBottom: `1px solid ${SHIELD_BORDER}`,
               marginBottom: 20, overflowX: "auto", WebkitOverflowScrolling: "touch",
@@ -404,7 +417,7 @@ export default function APAShield() {
               ))}
             </div>
 
-            {/* Tab: Overview — single column on mobile */}
+            {/* Tab: Overview */}
             {activeTab === "overview" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ background: SHIELD_CARD, border: `1px solid ${SHIELD_BORDER}`, borderRadius: 10, padding: 20 }}>
