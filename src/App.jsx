@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import Icon from "./components/Icon.jsx";
 import { LOGO_SRC } from "./logo.js";
 import NotifySection from "./sections/NotifySection.jsx";
+import AlertsSection from "./sections/AlertsSection.jsx";
+import SettingsSection from "./sections/SettingsSection.jsx";
+import HelpSection from "./sections/HelpSection.jsx";
+import SignInNeeded from "./components/SignInNeeded.jsx";
 import { getSession, isConfigured, onAuthChange } from "./lib/supabase.js";
 import {
   TONE,
@@ -23,21 +27,6 @@ const NAV = [
   { id: "settings", label: "Settings", icon: "gear" },
   { id: "help", label: "Help & Support", icon: "help" },
 ];
-
-const NOT_CONNECTED = {
-  alerts: {
-    title: "Alerts",
-    text: "Alert rules need a backend service that stores them and watches for new events. That service isn't connected yet, so no alert rules can be created or activated.",
-  },
-  settings: {
-    title: "Settings",
-    text: "Account, password, and privacy settings depend on the account system, which isn't connected yet.",
-  },
-  help: {
-    title: "Help & Support",
-    text: "The help centre and support contact details haven't been set up yet.",
-  },
-};
 
 const SCAN_MODES = [
   { id: "email", icon: "mail", label: "Email Scan", desc: "Check whether an email appeared in a data breach" },
@@ -604,17 +593,6 @@ function ReportsPage({ history, selected, onSelect, onExport, onScan }) {
   );
 }
 
-function ComingSoon({ item, onBack }) {
-  return (
-    <EmptyState
-      icon="lock"
-      title={`${item.title}: not connected yet`}
-      text={item.text}
-      action={<button className="btn btn-outline" onClick={onBack}>Back to dashboard</button>}
-    />
-  );
-}
-
 /* ---------- App shell ---------- */
 
 function Sidebar({ page, onNavigate, open, onClose }) {
@@ -840,8 +818,27 @@ export default function App() {
     ) : (
       <p className="muted">Checking your session…</p>
     );
+  } else if (page === "alerts" || page === "settings") {
+    const label = NAV.find((n) => n.id === page).label;
+    if (!authReady) {
+      body = <p className="muted">Checking your session…</p>;
+    } else if (!session || recovering || !isConfigured) {
+      body = (
+        <SignInNeeded
+          pageTitle={label}
+          text={
+            page === "alerts"
+              ? "Sign in to set alert rules for the addresses and domains you monitor."
+              : "Sign in to change your password, account details and signed-in devices."
+          }
+          onSignIn={() => go("notifications")}
+        />
+      );
+    } else {
+      body = page === "alerts" ? <AlertsSection session={session} /> : <SettingsSection session={session} />;
+    }
   } else {
-    body = <ComingSoon item={NOT_CONNECTED[page]} onBack={() => go("dashboard")} />;
+    body = <HelpSection />;
   }
 
   return (

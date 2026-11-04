@@ -647,3 +647,21 @@ code {
 .promo-foot a:hover { color: #E4DDFF; }
 .brand-link { color: var(--purple); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .brand-link:hover { color: var(--purple-dark); }
+
+/* ---------- Settings, alerts and help ---------- */
+
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.card-danger { border-color: rgba(224, 68, 79, 0.35); }
+.rule-label { margin: 0; min-height: 46px; display: flex; align-items: center; font-weight: 600; }
+.field select {
+  width: 100%; min-height: 46px; padding: 0 14px;
+  background: #FAF9FF; border: 1px solid var(--border); border-radius: 10px; font-size: 15px;
+}
+.field select:focus, .field input[readonly] { outline: none; }
+.field input[readonly] { color: var(--muted); }
+.faq { display: flex; flex-direction: column; }
+.faq-item { border-top: 1px solid var(--border); padding: 12px 0; }
+.faq-item:first-child { border-top: 0; }
+.faq-item summary { cursor: pointer; font-weight: 700; min-height: 36px; display: flex; align-items: center; }
+.faq-item p { margin: 6px 0 0; }

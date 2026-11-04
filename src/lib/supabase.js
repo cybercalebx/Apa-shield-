@@ -157,3 +157,60 @@ export async function savePreferences({ userId, prefs }) {
   if (error) throw error;
   return data;
 }
+
+/* ---------- Account settings ---------- */
+
+/** Saves the display name in the account's metadata. */
+export async function updateDisplayName(name) {
+  const { data, error } = await client().auth.updateUser({ data: { display_name: name } });
+  if (error) throw error;
+  return data.user;
+}
+
+/** Ends every session for this account, on all devices. */
+export async function signOutEverywhere() {
+  const { error } = await client().auth.signOut({ scope: "global" });
+  if (error) throw error;
+}
+
+/**
+ * Deletes the signed-in account and its data.
+ * Uses the delete_own_account() database function (see supabase/migration-2.sql).
+ */
+export async function deleteOwnAccount() {
+  const { error } = await client().rpc("delete_own_account");
+  if (error) throw error;
+  await client().auth.signOut({ scope: "local" }).catch(() => {});
+}
+
+/* ---------- Alert rules ---------- */
+
+export async function loadAlertRules(userId) {
+  const { data, error } = await client()
+    .from("alert_rules")
+    .select("id, target_id, rule_type, min_severity, enabled, created_at")
+    .eq("user_id", userId)
+    .order("created_at");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addAlertRule({ userId, targetId, ruleType, minSeverity }) {
+  const { data, error } = await client()
+    .from("alert_rules")
+    .insert({ user_id: userId, target_id: targetId, rule_type: ruleType, min_severity: minSeverity, enabled: true })
+    .select("id, target_id, rule_type, min_severity, enabled, created_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setAlertRuleEnabled(id, enabled) {
+  const { error } = await client().from("alert_rules").update({ enabled }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function removeAlertRule(id) {
+  const { error } = await client().from("alert_rules").delete().eq("id", id);
+  if (error) throw error;
+}

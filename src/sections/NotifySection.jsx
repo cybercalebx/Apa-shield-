@@ -265,14 +265,6 @@ function NotifyDashboard({ session, onGoHome }) {
             ))}
           </div>
 
-          <div className="channel">
-            <span className="label">Other channels</span>
-            <div className="target">
-              <span>Telegram</span>
-              <span className="muted small">Not connected yet</span>
-            </div>
-          </div>
-
           {prefError && <div className="notice notice-error" role="alert">{prefError}</div>}
           {prefMessage && !dirty && <div className="notice notice-success" role="status">{prefMessage}</div>}
           <button className="btn btn-primary btn-block" onClick={save} disabled={!dirty || saving}>
