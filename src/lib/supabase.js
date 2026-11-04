@@ -214,3 +214,23 @@ export async function removeAlertRule(id) {
   const { error } = await client().from("alert_rules").delete().eq("id", id);
   if (error) throw error;
 }
+
+/* ---------- Email verification ---------- */
+
+/** Asks the server to email a verification link to one of the user's addresses. */
+export async function requestVerification(targetId) {
+  const { data, error } = await client().functions.invoke("send-verification", {
+    body: { target_id: targetId },
+  });
+  if (error) {
+    let message = error.message;
+    try {
+      const body = await error.context.json();
+      if (body?.error) message = body.error;
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  return data;
+}

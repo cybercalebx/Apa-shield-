@@ -662,10 +662,19 @@ function TopBar({ onMenu, onSearch, onBell, accountLabel }) {
   );
 }
 
+// Set when the user comes back from a verification link (?verify=ok or ?verify=failed).
+// Read once per page load, outside effects, so it survives React's development re-runs.
+const VERIFY_RESULT = new URLSearchParams(window.location.search).get("verify");
+
+const VERIFY_NOTICE = {
+  ok: { tone: "success", text: "Your email address is verified. You'll receive alerts for it once alert sending is connected." },
+  failed: { tone: "error", text: "That verification link is invalid or has expired. Request a new one on the Notify Me page." },
+};
+
 export default function App() {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(VERIFY_RESULT ? "notifications" : "dashboard");
   const [navOpen, setNavOpen] = useState(false);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useState(VERIFY_NOTICE[VERIFY_RESULT] ?? null);
   const [history, setHistory] = useState([]);
   const [scanMode, setScanMode] = useState("email");
   const [inputEmail, setInputEmail] = useState("");
@@ -677,6 +686,10 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(!isConfigured);
   const [recovering, setRecovering] = useState(false);
+
+  useEffect(() => {
+    if (VERIFY_RESULT) window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   useEffect(() => {
     if (!isConfigured) return undefined;

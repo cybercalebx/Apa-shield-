@@ -6,6 +6,7 @@ import {
   isConfigured,
   loadNotifySettings,
   removeTarget,
+  requestVerification,
   savePreferences,
   signOut,
 } from "../lib/supabase.js";
@@ -119,6 +120,9 @@ function NotifyDashboard({ session, onGoHome }) {
   const [prefMessage, setPrefMessage] = useState("");
   const [prefError, setPrefError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [verifyingId, setVerifyingId] = useState(null);
+  const [verifyMessage, setVerifyMessage] = useState("");
+  const [verifyError, setVerifyError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -169,6 +173,20 @@ function NotifyDashboard({ session, onGoHome }) {
       setTargets((t) => t.filter((x) => x.id !== id));
     } catch (err) {
       setAddError(err.message || "Couldn't remove that address.");
+    }
+  };
+
+  const sendVerification = async (t) => {
+    setVerifyingId(t.id);
+    setVerifyMessage("");
+    setVerifyError("");
+    try {
+      await requestVerification(t.id);
+      setVerifyMessage(`Verification email sent to ${t.value}. Check your inbox and spam folder.`);
+    } catch (err) {
+      setVerifyError(err.message || "Couldn't send the verification email.");
+    } finally {
+      setVerifyingId(null);
     }
   };
 
@@ -231,6 +249,8 @@ function NotifyDashboard({ session, onGoHome }) {
             <button type="submit" className="btn btn-primary btn-block">Add to monitoring</button>
           </form>
 
+          {verifyError && <div className="notice notice-error" role="alert">{verifyError}</div>}
+          {verifyMessage && <div className="notice notice-success" role="status">{verifyMessage}</div>}
           {loading ? (
             <p className="muted small">Loading…</p>
           ) : targets.length === 0 ? (
@@ -247,6 +267,11 @@ function NotifyDashboard({ session, onGoHome }) {
                     <span className={`status ${t.verified ? "status-pass" : "status-warning"}`}>
                       {t.verified ? "Verified" : "Pending"}
                     </span>
+                    {t.kind === "email" && !t.verified && (
+                      <button className="link" onClick={() => sendVerification(t)} disabled={verifyingId === t.id}>
+                        {verifyingId === t.id ? "Sending…" : "Send verification email"}
+                      </button>
+                    )}
                     <button className="link" onClick={() => removeMonitored(t.id)}>Remove</button>
                   </div>
                 </li>
