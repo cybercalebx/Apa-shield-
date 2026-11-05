@@ -211,14 +211,9 @@ function NotifyDashboard({ session, onGoHome }) {
 
   return (
     <section className="stack-lg">
-      <div className="page-head page-head-row">
-        <div>
-          <h2>Notify Me</h2>
-          <p className="muted small">Signed in as {session.user.email}</p>
-        </div>
-        <button className="btn btn-outline" onClick={async () => { await signOut(); onGoHome(); }}>
-          Sign out
-        </button>
+      <div className="page-head">
+        <h2>Notify Me</h2>
+        <p className="muted small">Signed in as {session.user.email}</p>
       </div>
 
       {loadError && <div className="notice notice-error" role="alert">Couldn't load your settings: {loadError}</div>}
@@ -296,6 +291,12 @@ function NotifyDashboard({ session, onGoHome }) {
             {saving ? "Saving…" : "Save preferences"}
           </button>
         </section>
+      </div>
+
+      <div className="signout-row">
+        <button className="btn btn-outline" onClick={async () => { await signOut(); onGoHome(); }}>
+          Sign out
+        </button>
       </div>
     </section>
   );

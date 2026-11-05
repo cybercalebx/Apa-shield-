@@ -665,3 +665,14 @@ code {
 .faq-item:first-child { border-top: 0; }
 .faq-item summary { cursor: pointer; font-weight: 700; min-height: 36px; display: flex; align-items: center; }
 .faq-item p { margin: 6px 0 0; }
+
+/* ---------- Notify Me: list rows and sign out placement ---------- */
+
+.signout-row { display: flex; justify-content: center; padding-top: 8px; }
+
+@media (max-width: 640px) {
+  .list-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .target { width: 100%; min-width: 0; }
+  .target .mono { overflow-wrap: anywhere; word-break: break-word; }
+  .target-actions { flex-wrap: wrap; justify-content: space-between; }
+}

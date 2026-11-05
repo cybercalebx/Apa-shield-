@@ -234,3 +234,23 @@ export async function requestVerification(targetId) {
   }
   return data;
 }
+
+/* ---------- Alerts ---------- */
+
+/** Sends a test alert to one of the user's verified addresses. */
+export async function sendTestAlert(targetId) {
+  const { data, error } = await client().functions.invoke("send-alert", {
+    body: { target_id: targetId, kind: "test" },
+  });
+  if (error) {
+    let message = error.message;
+    try {
+      const body = await error.context.json();
+      if (body?.error) message = body.error;
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  return data;
+}

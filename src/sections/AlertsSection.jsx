@@ -5,6 +5,7 @@ import {
   loadAlertRules,
   loadNotifySettings,
   removeAlertRule,
+  sendTestAlert,
   setAlertRuleEnabled,
 } from "../lib/supabase.js";
 
@@ -30,6 +31,9 @@ export default function AlertsSection({ session }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [testingId, setTestingId] = useState(null);
+  const [testMessage, setTestMessage] = useState("");
+  const [testError, setTestError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +53,21 @@ export default function AlertsSection({ session }) {
 
   const targetById = (id) => targets.find((t) => t.id === id);
   const selected = targetById(targetId);
+  const verifiedEmails = targets.filter((t) => t.kind === "email" && t.verified);
+
+  const sendTest = async (t) => {
+    setTestingId(t.id);
+    setTestMessage("");
+    setTestError("");
+    try {
+      await sendTestAlert(t.id);
+      setTestMessage(`Test alert sent to ${t.value}. Check your inbox and spam folder.`);
+    } catch (err) {
+      setTestError(err.message || "Couldn't send the test alert.");
+    } finally {
+      setTestingId(null);
+    }
+  };
 
   const add = async (e) => {
     e.preventDefault();
@@ -188,6 +207,29 @@ export default function AlertsSection({ session }) {
           </ul>
         </section>
       </div>
+
+      <section className="card">
+        <h3>Send a test alert</h3>
+        <p className="muted small">
+          Sends a test email to a verified address so you can check delivery. It doesn't report a breach.
+        </p>
+        {testError && <div className="notice notice-error" role="alert">{testError}</div>}
+        {testMessage && <div className="notice notice-success" role="status">{testMessage}</div>}
+        {verifiedEmails.length === 0 ? (
+          <p className="muted small">Verify an email address on Notify Me to send a test alert.</p>
+        ) : (
+          <ul className="list">
+            {verifiedEmails.map((t) => (
+              <li key={t.id} className="list-row">
+                <span className="mono wrap">{t.value}</span>
+                <button className="btn btn-outline" onClick={() => sendTest(t)} disabled={testingId === t.id}>
+                  {testingId === t.id ? "Sending…" : "Send test alert"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </section>
   );
 }
