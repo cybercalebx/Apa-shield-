@@ -676,3 +676,10 @@ code {
   .target .mono { overflow-wrap: anywhere; word-break: break-word; }
   .target-actions { flex-wrap: wrap; justify-content: space-between; }
 }
+
+/* ---------- Recent activity rows: time sits under the text, never over it ---------- */
+
+.activity-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.activity-row .activity { min-width: 0; }
+.activity-row .activity > div { min-width: 0; flex: 1; }
+.activity-row .nowrap { padding-left: 46px; white-space: nowrap; }

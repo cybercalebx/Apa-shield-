@@ -346,7 +346,7 @@ function Dashboard({ history, latest, onScan, onReports, onAlerts, onNotify }) {
           ) : (
             <ul className="list">
               {recent.map((r) => (
-                <li key={r.id} className="list-row">
+                <li key={r.id} className="list-row activity-row">
                   <div className="activity">
                     <span className="activity-icon"><Icon name="check" size={16} /></span>
                     <div>
