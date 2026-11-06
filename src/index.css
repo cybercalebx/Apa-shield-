@@ -777,3 +777,14 @@ code {
 .brand-mark { width: 112px; height: 112px; object-fit: contain; }
 .brand-name { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1; }
 .sidebar .close-btn { position: absolute; top: 0; right: 0; }
+
+/* ---------- Stay still while typing: iOS zooms into any field under 16px ---------- */
+
+input, select, textarea,
+.search input,
+.field input,
+.field select,
+.input-wrap input {
+  font-size: 16px;
+}
+
