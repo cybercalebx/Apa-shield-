@@ -11,10 +11,10 @@ export const TYPE_LABEL = {
 };
 
 export const TONE = {
-  green: "#14A36B",
-  amber: "#E8900C",
-  red: "#E0444F",
-  blue: "#3B6FE0",
+  green: "#34D399",
+  amber: "#FBBF24",
+  red: "#F87171",
+  blue: "#60A5FA",
 };
 
 const BREACH_POOL = [

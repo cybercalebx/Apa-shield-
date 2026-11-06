@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import Icon from "./components/Icon.jsx";
-import { LOGO_SRC } from "./logo.js";
+import { LOGO_SRC, LOGO_MARK_SRC } from "./logo.js";
 import NotifySection from "./sections/NotifySection.jsx";
+import LinkCheck from "./components/LinkCheck.jsx";
 import AlertsSection from "./sections/AlertsSection.jsx";
 import SettingsSection from "./sections/SettingsSection.jsx";
 import HelpSection from "./sections/HelpSection.jsx";
@@ -25,6 +26,7 @@ const NAV = [
   { id: "alerts", label: "Alerts", icon: "bell" },
   { id: "notifications", label: "Notifications", icon: "send" },
   { id: "settings", label: "Settings", icon: "gear" },
+  { id: "link", label: "Link Verification", icon: "link" },
   { id: "help", label: "Help & Support", icon: "help" },
 ];
 
@@ -62,7 +64,7 @@ function Gauge({ score }) {
   return (
     <div className="gauge">
       <svg viewBox="0 0 140 140" aria-hidden="true">
-        <circle cx="70" cy="70" r={r} fill="none" stroke="#ECEAF5" strokeWidth="10" />
+        <circle cx="70" cy="70" r={r} fill="none" style={{ stroke: "var(--ring)" }} strokeWidth="10" />
         <circle
           cx="70" cy="70" r={r} fill="none" strokeWidth="10" strokeLinecap="round"
           style={{ stroke: color }}
@@ -92,7 +94,7 @@ function Donut({ split, score }) {
   return (
     <div className="donut">
       <svg viewBox="0 0 160 160" aria-hidden="true">
-        <circle cx="80" cy="80" r={r} fill="none" stroke="#ECEAF5" strokeWidth="16" />
+        <circle cx="80" cy="80" r={r} fill="none" style={{ stroke: "var(--ring)" }} strokeWidth="16" />
         {segments.map(([pct, color], i) => {
           const len = (pct / 100) * C;
           const el = (
@@ -136,7 +138,7 @@ function Sparkline({ values }) {
         fill="none" stroke={TONE.blue} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
       />
       {pts.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="4" fill="#fff" stroke={TONE.blue} strokeWidth="2" />
+        <circle key={i} cx={x} cy={y} r="4" style={{ fill: "var(--surface)" }} stroke={TONE.blue} strokeWidth="2" />
       ))}
     </svg>
   );
@@ -277,65 +279,68 @@ function ScanResult({ record }) {
 
 /* ---------- Pages ---------- */
 
-function Dashboard({ history, latest, onScan, onReports, onAlerts, onNotify }) {
-  const threats = history.reduce((n, r) => n + r.threats, 0);
-  const domains = new Set(history.map((r) => r.domain).filter(Boolean)).size;
+function ServiceCard({ icon, title, desc, cta, onClick, featured }) {
+  return (
+    <div className={`service ${featured ? "featured" : ""}`}>
+      <span className="service-icon"><Icon name={icon} size={28} /></span>
+      <h3>{title}</h3>
+      <p>{desc}</p>
+      <button className={`btn ${featured ? "btn-primary" : "btn-soft"}`} onClick={onClick}>
+        {cta} <Icon name="arrow" size={16} />
+      </button>
+    </div>
+  );
+}
+
+function Dashboard({ history, latest, account, onScan, onLink, onReports, onNotify }) {
   const split = latest ? checkSplit(latest) : null;
   const recent = history.slice().reverse().slice(0, 4);
   const status = latest ? scoreStatus(latest.score) : null;
+  const first = account?.name ? account.name.split(" ")[0] : "there";
 
   return (
     <div className="stack-lg">
-      <section className="hero">
-        <div className="hero-text">
-          <span className="pill">
-            <Icon name="check" size={14} /> Trusted · Secure · Reliable
-          </span>
-          <h1>
-            Smart Security.
-            <br />
-            <span className="accent">Stronger Protection.</span>
-          </h1>
-          <p className="hero-sub">
-            Scan for email breaches, domain vulnerabilities, and security issues in one powerful platform.
-          </p>
-          <div className="hero-actions">
-            <button className="btn btn-primary" onClick={onNotify}>
-              <Icon name="bell" size={18} /> Notify Me <Icon name="arrow" size={16} />
-            </button>
-            <button className="btn btn-outline" onClick={() => onScan("both")}>
-              <Icon name="play" size={16} /> Start a scan
-            </button>
-          </div>
-          <p className="fine">
-            <Icon name="lock" size={14} /> Get notified when it's ready
-          </p>
+      <section className="greet">
+        <div>
+          <h1>Hello {first} <span aria-hidden="true">👋</span></h1>
+          <p>Your security is our priority. Stay protected always.</p>
         </div>
-        <div className="hero-visual" aria-hidden="true">
-          <div className="hero-orb" />
-          <img src={LOGO_SRC} alt="" className="hero-logo" />
-        </div>
+        <span className="health">
+          <Icon name="shield" size={16} /> {status ? status.label : "No scans yet"}
+        </span>
       </section>
 
-      <section>
-        <div className="section-head">
-          <h2><Icon name="chart" size={20} /> Dashboard</h2>
-          <span className="muted small">This session · Lagos time</span>
-        </div>
-        <div className="stats">
-          <StatCard icon="shield" tone="purple" label="Security Status"
-            value={latest ? `${latest.score}/100` : "—"}
-            hint={status ? status.label : "Run a scan to see your status"} />
-          <StatCard icon="scan" tone="purple" label="Total Scans"
-            value={history.length} hint={history.length ? "Completed this session" : "No scans yet"} />
-          <StatCard icon="alert" tone="red" label="Threats Found"
-            value={threats} hint={threats ? "Across all scans" : "None detected so far"} />
-          <StatCard icon="globe" tone="blue" label="Domains Monitored"
-            value={domains} hint={domains ? "Domains scanned" : "Add a domain scan"} />
-        </div>
+      <section className="services" aria-label="Services">
+        <ServiceCard icon="mail" title="Email Scan" desc="Check for email breaches & data leaks."
+          cta="Run Scan" onClick={() => onScan("email")} />
+        <ServiceCard icon="globe" title="Domain Scan" desc="Audit SPF, DKIM, DMARC & SSL records."
+          cta="Run Scan" onClick={() => onScan("domain")} />
+        <ServiceCard featured icon="link" title="Link Verification" desc="Check URLs for phishing, malware & redirects."
+          cta="Verify Link" onClick={onLink} />
+        <ServiceCard icon="shield" title="Full Scan" desc="Comprehensive security check."
+          cta="Run Scan" onClick={() => onScan("both")} />
       </section>
 
       <section className="row-3">
+        <div className="card">
+          <div className="card-head">
+            <h3>Security Overview</h3>
+          </div>
+          {split ? (
+            <div className="overview">
+              <Donut split={split} score={latest.score} />
+              <ul className="legend">
+                <li><i style={{ background: TONE.green }} /> Secure <b>{split.secure}%</b></li>
+                <li><i style={{ background: TONE.amber }} /> At risk <b>{split.risk}%</b></li>
+                <li><i style={{ background: TONE.red }} /> Critical <b>{split.critical}%</b></li>
+              </ul>
+              <p className="muted small center">From your latest scan of {latest.email || latest.domain}.</p>
+            </div>
+          ) : (
+            <EmptyState icon="shield" title="No overview yet" text="Run a scan to see secure, at-risk and critical checks." />
+          )}
+        </div>
+
         <div className="card">
           <div className="card-head">
             <h3>Recent Activity</h3>
@@ -361,69 +366,17 @@ function Dashboard({ history, latest, onScan, onReports, onAlerts, onNotify }) {
           )}
         </div>
 
-        <div className="card">
-          <div className="card-head">
-            <h3>Security Overview</h3>
-          </div>
-          {split ? (
-            <div className="overview">
-              <Donut split={split} score={latest.score} />
-              <ul className="legend">
-                <li><i style={{ background: TONE.green }} /> Secure <b>{split.secure}%</b></li>
-                <li><i style={{ background: TONE.amber }} /> At risk <b>{split.risk}%</b></li>
-                <li><i style={{ background: TONE.red }} /> Critical <b>{split.critical}%</b></li>
-              </ul>
-              <p className="muted small center">From your latest scan of {latest.email || latest.domain}.</p>
-            </div>
-          ) : (
-            <EmptyState icon="shield" title="No overview yet" text="Run a scan to see secure, at-risk and critical checks." />
-          )}
-        </div>
-
         <div className="promo">
           <img src={LOGO_SRC} alt="" className="promo-logo" />
           <span className="promo-kicker">Automation Prime Africa</span>
           <h3>Building a safer digital ecosystem.</h3>
+          <button className="btn promo-btn" onClick={onNotify}>
+            <Icon name="bell" size={16} /> Notify Me
+          </button>
           <span className="promo-foot">Powered by <a href="https://www.automationprimeafrica.com/" target="_blank" rel="noopener noreferrer">Automation Prime Africa</a></span>
         </div>
       </section>
-
-      <section className="card">
-        <div className="card-head">
-          <h3>Quick Actions</h3>
-        </div>
-        <div className="actions-grid">
-          <QuickAction icon="mail" label="Email Scan" onClick={() => onScan("email")} />
-          <QuickAction icon="globe" label="Domain Scan" onClick={() => onScan("domain")} />
-          <QuickAction icon="shield" label="Full Scan" onClick={() => onScan("both")} />
-          <QuickAction icon="chart" label="View Reports" onClick={onReports} />
-          <QuickAction icon="bell" label="Manage Alerts" onClick={onAlerts} />
-          <QuickAction icon="send" label="Notify Me" onClick={onNotify} />
-        </div>
-      </section>
     </div>
-  );
-}
-
-function StatCard({ icon, tone, label, value, hint }) {
-  return (
-    <div className="stat">
-      <span className={`stat-icon tone-${tone}`}><Icon name={icon} size={22} /></span>
-      <div className="stat-body">
-        <span className="label">{label}</span>
-        <strong>{value}</strong>
-        <span className="muted small">{hint}</span>
-      </div>
-    </div>
-  );
-}
-
-function QuickAction({ icon, label, onClick }) {
-  return (
-    <button className="action" onClick={onClick}>
-      <span className="action-icon"><Icon name={icon} size={20} /></span>
-      <span>{label}</span>
-    </button>
   );
 }
 
@@ -517,6 +470,18 @@ function ScanPage({ scanMode, setScanMode, inputEmail, setInputEmail, inputDomai
   );
 }
 
+function LinkPage() {
+  return (
+    <div className="stack-lg">
+      <div className="page-head">
+        <h2>Link Verification</h2>
+        <p className="muted">Check whether a link has common warning signs before you open it.</p>
+      </div>
+      <LinkCheck />
+    </div>
+  );
+}
+
 function ReportsPage({ history, selected, onSelect, onExport, onScan }) {
   const scores = history.map((r) => r.score);
   return (
@@ -601,11 +566,8 @@ function Sidebar({ page, onNavigate, open, onClose }) {
       <div className={`scrim ${open ? "show" : ""}`} onClick={onClose} aria-hidden="true" />
       <aside className={`sidebar ${open ? "open" : ""}`} aria-label="Main navigation">
         <div className="brand">
-          <span className="brand-logo"><img src={LOGO_SRC} alt="" /></span>
-          <div>
-            <div className="brand-name">APA <span>SHIELD</span></div>
-            <div className="brand-sub">Automation Prime Africa</div>
-          </div>
+          <img className="brand-mark" src={LOGO_MARK_SRC} alt="" />
+          <div className="brand-name">APA <span>SHIELD</span></div>
           <button className="icon-btn close-btn" onClick={onClose} aria-label="Close menu">
             <Icon name="close" size={18} />
           </button>
@@ -634,7 +596,10 @@ function Sidebar({ page, onNavigate, open, onClose }) {
   );
 }
 
-function TopBar({ onMenu, onSearch, onBell, accountLabel }) {
+const initials = (name) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+
+function TopBar({ onMenu, onSearch, onBell, account }) {
   const [q, setQ] = useState("");
   return (
     <header className="topbar">
@@ -651,10 +616,10 @@ function TopBar({ onMenu, onSearch, onBell, accountLabel }) {
           <Icon name="bell" size={20} />
         </button>
         <div className="account">
-          <span className="avatar">AP</span>
+          <span className="avatar">{account ? initials(account.name) : "G"}</span>
           <span className="account-text">
-            <strong>{accountLabel ? "Signed in" : "Guest"}</strong>
-            <span>{accountLabel || "Demo mode"}</span>
+            <strong>{account ? account.name : "Guest"}</strong>
+            <span>{account ? account.email : "Demo mode"}</span>
           </span>
         </div>
       </div>
@@ -710,6 +675,12 @@ export default function App() {
   }, []);
 
   const latest = history[history.length - 1] ?? null;
+  const accountInfo = session?.user
+    ? {
+        name: session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "Account",
+        email: session.user.email,
+      }
+    : null;
   const selected = history.find((r) => r.id === selectedId) ?? latest;
 
   const go = (p) => {
@@ -788,9 +759,10 @@ export default function App() {
       <Dashboard
         history={history}
         latest={latest}
+        account={accountInfo}
         onScan={openScan}
+        onLink={() => go("link")}
         onReports={() => go("reports")}
-        onAlerts={() => go("alerts")}
         onNotify={() => go("notifications")}
       />
     );
@@ -820,6 +792,8 @@ export default function App() {
         onScan={openScan}
       />
     );
+  } else if (page === "link") {
+    body = <LinkPage />;
   } else if (page === "notifications") {
     body = authReady ? (
       <NotifySection
@@ -862,7 +836,7 @@ export default function App() {
           onMenu={() => setNavOpen(true)}
           onSearch={handleSearch}
           onBell={() => go("notifications")}
-          accountLabel={session?.user?.email}
+          account={accountInfo}
         />
         <main className="content">
           {notice && (
