@@ -560,7 +560,54 @@ function ReportsPage({ history, selected, onSelect, onExport, onScan }) {
 
 /* ---------- App shell ---------- */
 
-function Sidebar({ page, onNavigate, open, onClose }) {
+const THEME_KEY = "apa-shield-theme";
+
+function readTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+function ThemeSwitch({ theme, onChange }) {
+  const [open, setOpen] = useState(false);
+  const pick = (t) => {
+    onChange(t);
+    setOpen(false);
+  };
+  return (
+    <div className="theme">
+      {open && (
+        <div className="theme-menu" role="menu">
+          <button className="theme-option" role="menuitemradio" aria-checked={theme === "light"} onClick={() => pick("light")}>
+            <span className="theme-option-icon"><Icon name="sun" size={18} /></span>
+            <span>
+              <strong>Light Mode</strong>
+              <span className="small muted">Clean &amp; bright interface</span>
+            </span>
+            {theme === "light" && <Icon name="check" size={18} />}
+          </button>
+          <button className="theme-option" role="menuitemradio" aria-checked={theme === "dark"} onClick={() => pick("dark")}>
+            <span className="theme-option-icon is-dark"><Icon name="moon" size={18} /></span>
+            <span>
+              <strong>Dark Mode</strong>
+              <span className="small muted">Easy on the eyes</span>
+            </span>
+            {theme === "dark" && <Icon name="check" size={18} />}
+          </button>
+        </div>
+      )}
+      <button className="theme-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
+        <Icon name={theme === "light" ? "sun" : "moon"} size={16} />
+        <span>{theme === "light" ? "Light mode" : "Dark mode"}</span>
+        <Icon name="chevron" size={16} className="theme-chevron" />
+      </button>
+    </div>
+  );
+}
+
+function Sidebar({ page, onNavigate, open, onClose, theme, onTheme }) {
   return (
     <>
       <div className={`scrim ${open ? "show" : ""}`} onClick={onClose} aria-hidden="true" />
@@ -586,6 +633,8 @@ function Sidebar({ page, onNavigate, open, onClose }) {
             </button>
           ))}
         </nav>
+
+        <ThemeSwitch theme={theme} onChange={onTheme} />
 
         <div className="sidebar-card">
           <Icon name="shield" size={26} />
@@ -651,6 +700,16 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(!isConfigured);
   const [recovering, setRecovering] = useState(false);
+  const [theme, setTheme] = useState(readTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* private mode: the choice simply isn't remembered */
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (VERIFY_RESULT) window.history.replaceState({}, "", window.location.pathname);
@@ -831,7 +890,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar page={page} onNavigate={go} open={navOpen} onClose={() => setNavOpen(false)} />
+      <Sidebar page={page} onNavigate={go} open={navOpen} onClose={() => setNavOpen(false)} theme={theme} onTheme={setTheme} />
       <div className="main">
         <TopBar
           onMenu={() => setNavOpen(true)}
@@ -858,4 +917,3 @@ export default function App() {
     </div>
   );
 }
-
