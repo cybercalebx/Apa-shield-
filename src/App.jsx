@@ -687,6 +687,7 @@ export default function App() {
     setPage(p);
     setNavOpen(false);
     setNotice(null);
+    window.scrollTo({ top: 0, left: 0 });
   };
 
   const openScan = (mode) => {
@@ -857,3 +858,4 @@ export default function App() {
     </div>
   );
 }
+
